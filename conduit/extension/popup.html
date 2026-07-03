@@ -1,191 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <title>Conduit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conduit — preview</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      width: 300px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 13px;
-      background: #0d0d0d;
-      color: #e2e2e2;
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    /* ── Header ── */
+    :root {
+      --ink: #070C0D;
+      --ink-2: #0B1213;
+      --ink-3: #0F1819;
+      --line: #182122;
+      --line-2: #223231;
+      --signal: #3BE8B0;
+      --signal-soft: #3be8b02e;
+      --signal-faint: #3be8b014;
+      --hot: #A7FFE4;
+      --warn: #F5C451;
+      --dead: #FB7185;
+      --text: #DBE8E4;
+      --muted: #61756F;
+      --faint: #33413D;
+      --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+    }
+
+    html {
+      width: 364px;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 32px 12px;
+      background: radial-gradient(90% 60% at 50% 0%, #0c1615 0%, #05090a 65%);
+      font-family: var(--font-sans);
+    }
+
+    .device {
+      width: 340px;
+      font-size: 13px;
+      color: var(--text);
+      background: radial-gradient(120% 60% at 50% -10%, #0d1a19 0%, transparent 60%), var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px -20px #000, 0 0 0 1px #ffffff05;
+      -webkit-font-smoothing: antialiased;
+    }
+
     .header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 16px 12px;
-      border-bottom: 1px solid #1f1f1f;
+      padding: 15px 16px 13px;
     }
-    .header-left { display: flex; align-items: center; gap: 9px; }
-    .logo-mark {
-      width: 28px; height: 28px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wordmark {
       font-size: 14px;
-    }
-    .logo-text { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
-    .version-badge {
-      font-size: 10px; color: #555;
-      background: #1a1a1a; border: 1px solid #2a2a2a;
-      padding: 2px 6px; border-radius: 99px;
-    }
-    .refresh-btn {
-      background: none; border: none; cursor: pointer;
-      color: #444; font-size: 14px; padding: 4px;
-      border-radius: 4px; transition: color 0.15s;
-    }
-    .refresh-btn:hover { color: #888; }
-
-    /* ── Status bar ── */
-    .status-bar {
-      display: flex; align-items: center; gap: 8px;
-      padding: 9px 16px;
-      background: #111;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    .dot {
-      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-    }
-    .dot.green { background: #22c55e; box-shadow: 0 0 5px #22c55e99; }
-    .dot.red   { background: #ef4444; }
-    .dot.amber { background: #f59e0b; }
-    .dot.pulse { animation: pulse 1.6s ease-in-out infinite; }
-    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
-    .status-text { font-size: 12px; color: #999; }
-
-    /* ── Body ── */
-    .body { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
-
-    /* ── Section label ── */
-    .label {
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.09em; color: #444; margin-bottom: 5px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
     }
 
-    /* ── Provider cards ── */
-    .providers { display: flex; flex-direction: column; gap: 4px; }
-    .provider-card {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px;
-      background: #161616; border: 1px solid #222;
-      border-radius: 8px;
-    }
-    .provider-icon { font-size: 16px; line-height: 1; }
-    .provider-name { flex: 1; font-size: 13px; color: #ddd; text-transform: capitalize; }
-    .provider-url { font-size: 10px; color: #444; font-family: monospace; }
-    .no-providers {
-      text-align: center; color: #383838; font-size: 12px;
-      padding: 14px 0; line-height: 1.6;
+    .wordmark .tail {
+      color: var(--muted);
     }
 
-    /* ── Endpoint card ── */
-    .endpoint-card {
-      background: #161616; border: 1px solid #222; border-radius: 8px;
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      padding: 4px 9px 4px 8px;
+      border-radius: 99px;
+      border: 1px solid var(--line-2);
+      color: var(--muted);
+      background: var(--ink-2);
+      text-transform: uppercase;
+      transition: all .2s;
+    }
+
+    .pill .pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    [data-state="live"] .pill {
+      color: var(--signal);
+      border-color: var(--signal-soft);
+      box-shadow: 0 0 0 1px var(--signal-faint), 0 0 14px -4px var(--signal);
+    }
+
+    [data-state="live"] .pill .pip {
+      box-shadow: 0 0 6px var(--signal);
+      animation: blink 1.8s ease-in-out infinite;
+    }
+
+    [data-state="idle"] .pill {
+      color: var(--warn);
+      border-color: #f5c45133;
+    }
+
+    [data-state="offline"] .pill {
+      color: var(--dead);
+      border-color: #fb717133;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+    }
+
+    .readout {
+      padding: 0 16px 14px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .readout b {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .panel {
+      margin: 0 12px;
+      background: linear-gradient(180deg, var(--ink-2), var(--ink));
+      border: 1px solid var(--line);
+      border-radius: 12px;
       overflow: hidden;
     }
-    .endpoint-top {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px;
-      border-bottom: 1px solid #1e1e1e;
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.19em;
+      text-transform: uppercase;
+      color: var(--faint);
+      padding: 12px 14px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .method-badge {
-      font-size: 10px; font-weight: 700; color: #6366f1;
-      background: #6366f115; border: 1px solid #6366f133;
-      padding: 2px 6px; border-radius: 4px; font-family: monospace;
+
+    .eyebrow .arrow {
+      color: var(--line-2);
+    }
+
+    .rail {
+      position: relative;
+      padding: 2px 0 8px;
+    }
+
+    .stop {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 0 14px 0 44px;
+    }
+
+    .stop::before {
+      content: "";
+      position: absolute;
+      left: 19px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--faint);
+      transition: background .25s;
+    }
+
+    .stop:first-child::before {
+      top: 50%;
+    }
+
+    .stop:last-child::before {
+      bottom: 50%;
+    }
+
+    .node {
+      position: absolute;
+      left: 13.5px;
+      top: 50%;
+      width: 13px;
+      height: 13px;
+      margin-top: -6.5px;
+      border-radius: 50%;
+      background: var(--ink);
+      border: 2px solid var(--faint);
+      z-index: 2;
+      transition: all .25s;
+    }
+
+    .node.lit {
+      border-color: var(--signal);
+      background: var(--signal);
+      box-shadow: 0 0 0 3px var(--signal-faint), 0 0 10px -1px var(--signal);
+    }
+
+    .node.inlet {
+      width: 15px;
+      height: 15px;
+      margin-top: -7.5px;
+      left: 12.5px;
+    }
+
+    .node.inlet.lit {
+      background: var(--ink-3);
+      box-shadow: 0 0 0 3px var(--signal-faint), inset 0 0 0 3px var(--signal), 0 0 10px -1px var(--signal);
+    }
+
+    [data-state="live"] .rail .stop::before,
+    [data-state="idle"] .stop.is-inlet::before {
+      background: linear-gradient(180deg, var(--signal), var(--signal-soft));
+    }
+
+    .pulses {
+      position: absolute;
+      left: 19px;
+      top: 20px;
+      bottom: 20px;
+      width: 2px;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    [data-state="live"] .pulses {
+      opacity: 1;
+    }
+
+    .pulse {
+      position: absolute;
+      left: -2px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--hot);
+      box-shadow: 0 0 8px var(--hot);
+      animation: travel 2.4s linear infinite;
+    }
+
+    .pulse:nth-child(2) {
+      animation-delay: .8s;
+    }
+
+    .pulse:nth-child(3) {
+      animation-delay: 1.6s;
+    }
+
+    @keyframes travel {
+      0% {
+        top: 0%;
+        opacity: 0
+      }
+
+      12% {
+        opacity: 1
+      }
+
+      88% {
+        opacity: 1
+      }
+
+      100% {
+        top: 100%;
+        opacity: 0
+      }
+    }
+
+    .method {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--signal);
+      border: 1px solid var(--signal-soft);
+      background: var(--signal-faint);
+      padding: 2px 5px;
+      border-radius: 4px;
       flex-shrink: 0;
     }
-    .endpoint-url {
-      flex: 1; font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 11px; color: #7dd3fc;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .copy-btn {
-      background: none; border: none; cursor: pointer;
-      color: #444; font-size: 13px; padding: 2px 4px;
-      border-radius: 4px; transition: color 0.15s; flex-shrink: 0;
-    }
-    .copy-btn:hover { color: #888; }
-    .copy-btn.copied { color: #22c55e; }
 
-    /* ── Curl example ── */
-    .curl-block {
-      padding: 8px 10px;
-      font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 10px; color: #555; line-height: 1.5;
-      white-space: pre-wrap; word-break: break-all;
-      background: #111; border-radius: 8px;
-      border: 1px solid #1e1e1e;
-      cursor: pointer; transition: border-color 0.15s;
+    .stop .url {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stop .pname {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--text);
+      text-transform: capitalize;
+      font-weight: 500;
+    }
+
+    .stop.off .pname {
+      color: var(--muted);
+    }
+
+    .stop .phost {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--faint);
+    }
+
+    .stop .tag {
+      font-family: var(--font-mono);
+      font-size: 8.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 2px 5px;
+    }
+
+    .stop.on .tag {
+      color: var(--signal);
+      border-color: var(--signal-soft);
+    }
+
+    .iconbtn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--faint);
+      font-size: 13px;
+      padding: 4px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      transition: all .15s;
+    }
+
+    .iconbtn:hover {
+      color: var(--text);
+      background: var(--ink-3);
+    }
+
+    .iconbtn.ok {
+      color: var(--signal);
+    }
+
+    .iconbtn:focus-visible {
+      outline: 2px solid var(--signal);
+      outline-offset: 1px;
+    }
+
+    .quick {
+      margin: 12px 12px 0;
+    }
+
+    .quick .eyebrow {
+      padding: 0 2px 8px;
+    }
+
+    .curl {
       position: relative;
-    }
-    .curl-block:hover { border-color: #333; }
-    .curl-block:hover .curl-copy-hint { opacity: 1; }
-    .curl-copy-hint {
-      position: absolute; top: 6px; right: 8px;
-      font-size: 9px; color: #444; opacity: 0;
-      transition: opacity 0.15s; font-family: sans-serif;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.55;
+      color: var(--muted);
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      cursor: pointer;
+      transition: border-color .15s;
     }
 
-    /* ── Footer ── */
+    .curl:hover {
+      border-color: var(--line-2);
+    }
+
+    .curl .k {
+      color: var(--signal);
+    }
+
+    .curl .hint {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-family: var(--font-sans);
+      font-size: 9px;
+      color: var(--faint);
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .curl:hover .hint {
+      opacity: 1;
+    }
+
     .footer {
-      padding: 8px 16px 12px;
-      font-size: 10px; color: #2a2a2a;
+      padding: 13px 16px 14px;
       text-align: center;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      color: var(--faint);
+      text-transform: uppercase;
+    }
+
+    .footer .dotsep {
+      color: var(--line-2);
+      margin: 0 5px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .pulse,
+      .pill .pip {
+        animation: none !important
+      }
+
+      [data-state="live"] .pulses {
+        opacity: .6
+      }
+
+      .pulse {
+        top: 45%
+      }
+    }
+
+    /* preview-only chrome */
+    .switch {
+      display: none;
+      gap: 6px;
+    }
+
+    .switch button {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #0b1213;
+      border: 1px solid var(--line);
+      padding: 6px 12px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .switch button:hover {
+      color: var(--text);
+      border-color: var(--line-2);
+    }
+
+    .switch button.active {
+      color: var(--signal);
+      border-color: var(--signal-soft);
+      box-shadow: 0 0 0 1px var(--signal-faint);
+    }
+
+    .caption {
+      display: none;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #2f3d3a;
+      letter-spacing: .05em;
     }
   </style>
 </head>
+
 <body>
-  <div class="header">
-    <div class="header-left">
-      <div class="logo-mark">⚡</div>
-      <span class="logo-text">Conduit</span>
-      <span class="version-badge">v1.0</span>
-    </div>
-    <button class="refresh-btn" id="refreshBtn" title="Refresh status">↻</button>
+  <div class="switch" id="switch">
+    <button data-s="live" class="active">Live</button>
+    <button data-s="idle">Idle</button>
+    <button data-s="offline">Offline</button>
   </div>
 
-  <div class="status-bar">
-    <div class="dot pulse amber" id="statusDot"></div>
-    <span class="status-text" id="statusText">Checking…</span>
-  </div>
-
-  <div class="body">
-    <div>
-      <div class="label">Providers</div>
-      <div class="providers" id="providerList">
-        <div class="no-providers">No LLM tabs open<br>Open ChatGPT, Claude, or Gemini</div>
+  <div class="device" id="wrap" data-state="live">
+    <div class="header">
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="cg" x1="13" y1="4" x2="13" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#3BE8B0" />
+              <stop offset="1" stop-color="#12907A" />
+            </linearGradient>
+          </defs>
+          <rect x="0.5" y="0.5" width="25" height="25" rx="7.5" fill="#0B1213" stroke="url(#cg)" stroke-opacity="0.6" />
+          <line x1="13" y1="6.5" x2="13" y2="19.5" stroke="#1d3330" stroke-width="2" stroke-linecap="round" />
+          <line x1="13" y1="10.5" x2="13" y2="15.5" stroke="url(#cg)" stroke-width="2.6" stroke-linecap="round" />
+          <circle cx="13" cy="6.5" r="2.2" fill="#3BE8B0" />
+          <circle cx="13" cy="19.5" r="2.2" fill="#3BE8B0" />
+        </svg>
+        <span class="wordmark">Condu<span class="tail">it</span></span>
       </div>
+      <span class="pill"><span class="pip"></span><span id="pillLabel">Live</span></span>
     </div>
 
-    <div>
-      <div class="label">API endpoint</div>
-      <div class="endpoint-card">
-        <div class="endpoint-top">
-          <span class="method-badge">POST</span>
-          <span class="endpoint-url">http://localhost:8765/v1/chat</span>
-          <button class="copy-btn" id="copyEndpoint" title="Copy URL">⎘</button>
+    <div class="readout" id="readout"></div>
+
+    <div class="panel">
+      <div class="eyebrow"><span>Signal path</span><span class="arrow">inlet &rarr; outlets</span></div>
+      <div class="rail" id="rail">
+        <div class="pulses"><span class="pulse"></span><span class="pulse"></span><span class="pulse"></span></div>
+        <div class="stop is-inlet">
+          <span class="node inlet lit" id="inletNode"></span>
+          <span class="method">POST</span>
+          <span class="url">localhost:8765/v1/chat</span>
+          <button class="iconbtn" id="copyEndpoint" title="Copy endpoint">⎘</button>
         </div>
       </div>
     </div>
 
-    <div>
-      <div class="label">Quick start — click to copy</div>
-      <div class="curl-block" id="curlBlock">
-        <span class="curl-copy-hint">click to copy</span>curl -X POST http://localhost:8765/v1/chat \
-  -H "Content-Type: application/json" \
-  -d '{"provider":"chatgpt","prompt":"Hello!"}'</div>
+    <div class="quick">
+      <div class="eyebrow"><span>Quick start</span></div>
+      <div class="curl" id="curlBlock" role="button" tabindex="0" title="Click to copy"><span class="hint">click to
+          copy</span></div>
     </div>
+
+    <div class="footer">Conduit <span class="dotsep">/</span> LLM UI to API bridge</div>
   </div>
 
-  <div class="footer">Conduit — LLM UI → API bridge</div>
+  <div class="caption">preview — click Live / Idle / Offline to switch states</div>
 
-  <script src="popup.js"></script>
+  <script src="popup.js" defer></script>
 </body>
+
 </html>
