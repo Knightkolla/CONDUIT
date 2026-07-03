@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/banner.png" alt="Conduit" width="100%" />
+  <img src="conduit/docs/banner.png" alt="Conduit" width="100%" />
   <br/><br/>
   <p><b>Your browser session, turned into an HTTP API.</b></p>
   <p>No scraping. No unofficial keys. No rate-limit games.</p>
