@@ -615,13 +615,41 @@ const promptQueue = [];
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 let keepAliveAudio = null;
+let keepAliveSuccessShown = false;
+
+function showToast(message, isError = false) {
+  const el = document.createElement("div");
+  el.textContent = message;
+  Object.assign(el.style, {
+    position: "fixed", top: "20px", right: "20px", zIndex: 999999,
+    padding: "10px 16px", borderRadius: "8px",
+    background: isError ? "#ef4444" : "#10b981",
+    color: "#fff", fontFamily: "sans-serif", fontSize: "14px",
+    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+    transition: "opacity 0.3s",
+    pointerEvents: "none"
+  });
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = "0";
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
 
 function startKeepAlive() {
   if (!keepAliveAudio) {
     keepAliveAudio = new Audio(SILENT_WAV);
     keepAliveAudio.loop = true;
   }
-  keepAliveAudio.play().catch(e => console.warn("[Conduit] Audio keep-alive failed (needs page interaction):", e));
+  keepAliveAudio.play().then(() => {
+    if (!keepAliveSuccessShown) {
+      showToast("🔊 Conduit: Background keep-alive active");
+      keepAliveSuccessShown = true;
+    }
+  }).catch(e => {
+    console.warn("[Conduit] Audio keep-alive failed (needs page interaction):", e);
+    showToast("⚠️ Conduit: Click page to enable background mode!", true);
+  });
 }
 
 function stopKeepAlive() {
