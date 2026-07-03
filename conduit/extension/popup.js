@@ -103,6 +103,8 @@ function fetchStatus() {
     document.documentElement.style.height = "100%";
     document.body.style.height = "100%";
     document.body.style.minHeight = "100vh";
+    document.body.style.padding = "32px 12px";
+    document.body.classList.add("preview-mode");
 
     // Show preview controls in browser preview mode
     const previewSwitch = document.getElementById("switch");
