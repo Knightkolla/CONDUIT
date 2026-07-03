@@ -584,12 +584,11 @@ async function handlePrompt(id, promptText, web_search, timeout) {
     // Use custom timeout if provided by the backend, else 120s
     const timeoutMs = timeout ? timeout * 1000 : 120_000;
     const responseText = await waitForDone(msgsBefore, timeoutMs);
+    const images = await captureImages(msgsBefore);
 
-    if (!responseText) {
+    if (!responseText && images.length === 0) {
       throw new Error("Response captured was empty — the page may not have generated a reply.");
     }
-
-    const images = await captureImages(msgsBefore);
 
     chrome.runtime.sendMessage({ type: "response", id, text: responseText, images });
     console.log(`[Conduit] Request ${id} complete (${responseText.length} chars, ${images.length} images)`);
