@@ -662,11 +662,7 @@ function fetchImageViaBackground(url) {
   });
 }
 
-async function captureImages(msgsBefore) {
-  // Extra wait for lazy-loaded images (Gemini Imagen can render after the stop
-  // button disappears but before the full-res image src is stamped in the DOM)
-  await sleep(600);
-
+function findImageCandidates(msgsBefore) {
   let container = null;
 
   // ChatGPT: new assistant messages after the snapshot
@@ -676,47 +672,69 @@ async function captureImages(msgsBefore) {
 
   // ChatGPT fallback: .markdown prose div
   if (!container) {
-    const markdown = document.querySelectorAll(".markdown");
-    if (markdown.length) container = markdown[markdown.length - 1];
+    const md = document.querySelectorAll(".markdown");
+    if (md.length) container = md[md.length - 1];
   }
 
   // Gemini: model-response / img-gen-response web components (last = newest reply)
   if (!container) {
-    const gemini = document.querySelectorAll(
-      "model-response, img-gen-response, img-gen-image, .response-content"
-    );
-    if (gemini.length) container = gemini[gemini.length - 1];
+    const g = document.querySelectorAll("model-response, img-gen-response, img-gen-image, .response-content");
+    if (g.length) container = g[g.length - 1];
   }
 
   // Claude: .font-claude-message
   if (!container) {
-    const claude = document.querySelectorAll(".font-claude-message");
-    if (claude.length) container = claude[claude.length - 1];
+    const c = document.querySelectorAll(".font-claude-message");
+    if (c.length) container = c[c.length - 1];
   }
 
-  // Use body as last-resort so we never miss images due to a bad container guess
-  const searchRoot = container || document.body;
-
   // Pierce shadow DOM — Gemini nests images inside multiple shadow roots
-  const imgElements = querySelectorAllDeep(searchRoot, "img");
-  const base64Images = [];
-
-  for (const img of imgElements) {
+  return querySelectorAllDeep(container || document.body, "img").filter((img) => {
     const src = img.src;
-    const isAvatar = img.closest('[class*="avatar"]') || 
-                     img.classList.contains("avatar") || 
-                     /avatar|profile|user/i.test(img.alt || "") || 
+    // Skip empty, blob (tab-scoped, unfetchable from SW), and data URLs
+    if (!src || src.startsWith("blob:") || src.startsWith("data:")) return false;
+    if (!/^https?:/.test(src)) return false;
+    const isAvatar = img.closest('[class*="avatar"]') ||
+                     img.classList.contains("avatar") ||
+                     /avatar|profile|user/i.test(img.alt || "") ||
                      /avatar|profile|user/i.test(img.className || "");
-                     
-    if (!src || isAvatar || (img.naturalWidth > 0 && img.naturalWidth < 120) || (img.width > 0 && img.width < 120)) continue;
+    if (isAvatar) return false;
+    // Accept if size unknown (naturalWidth=0 means not loaded yet) or clearly large
+    return (img.naturalWidth === 0 || img.naturalWidth >= 120) &&
+           (img.width === 0 || img.width >= 120);
+  });
+}
 
+async function captureImages(msgsBefore, pollForLateImages = false) {
+  await sleep(600); // initial grace for lazy-loaded images
+
+  let candidates = findImageCandidates(msgsBefore);
+
+  // Gemini's image generation is two-phase: text finishes first (stop button
+  // disappears), then the image renders seconds later. When the response text
+  // was very short (image-gen responses), poll up to 15s for the image to appear.
+  if (candidates.length === 0 && pollForLateImages) {
+    console.log("[Conduit] No images yet — polling for late-rendering image content (up to 15s)…");
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline) {
+      await sleep(500);
+      candidates = findImageCandidates(msgsBefore);
+      if (candidates.length > 0) {
+        console.log(`[Conduit] Late image appeared after ${(15_000 - (deadline - Date.now())) / 1000}s`);
+        break;
+      }
+    }
+  }
+
+  const base64Images = [];
+  for (const img of candidates) {
     try {
-      console.log(`[Conduit] Fetching and encoding image via SW: ${src}`);
-      const dataUrl = await fetchImageViaBackground(src);
+      console.log(`[Conduit] Fetching image via SW: ${img.src}`);
+      const dataUrl = await fetchImageViaBackground(img.src);
       base64Images.push(dataUrl);
-      console.log(`[Conduit] Image encoded successfully. Size: ${dataUrl.length} chars`);
+      console.log(`[Conduit] Image encoded. Size: ${dataUrl.length} chars`);
     } catch (e) {
-      console.warn(`[Conduit] Failed to fetch image ${src}:`, e.message);
+      console.warn(`[Conduit] Failed to fetch image ${img.src}:`, e.message);
     }
   }
   return base64Images;
@@ -750,7 +768,10 @@ async function handlePrompt(id, promptText, web_search, timeout) {
     // Use custom timeout if provided by the backend, else 120s
     const timeoutMs = timeout ? timeout * 1000 : 120_000;
     const responseText = await waitForDone(msgsBefore, timeoutMs);
-    const images = await captureImages(msgsBefore);
+    // Short response (<= 200 chars) likely means image generation — poll for
+    // the image that renders after the text phase (Gemini two-phase generation)
+    const pollForLateImages = responseText.length <= 200;
+    const images = await captureImages(msgsBefore, pollForLateImages);
 
     if (!responseText && images.length === 0) {
       throw new Error("Response captured was empty — the page may not have generated a reply.");
