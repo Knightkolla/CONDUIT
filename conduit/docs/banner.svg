@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#060608"/>
+      <stop offset="100%" stop-color="#0d0d12"/>
+    </linearGradient>
+    <linearGradient id="glow1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A84FF" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="glow2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#BF5AF2" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#BF5AF2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wire" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#0A84FF" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="blur1">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+    <filter id="blur2">
+      <feGaussianBlur stdDeviation="35"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="320" fill="url(#bg)"/>
+
+  <!-- Ambient blobs -->
+  <ellipse cx="260" cy="120" rx="260" ry="200" fill="url(#glow1)" filter="url(#blur1)" opacity="0.9"/>
+  <ellipse cx="980" cy="200" rx="220" ry="180" fill="url(#glow2)" filter="url(#blur2)" opacity="0.8"/>
+
+  <!-- Grid lines -->
+  <g stroke="#ffffff" stroke-opacity="0.03" stroke-width="1">
+    <line x1="0" y1="64" x2="1280" y2="64"/>
+    <line x1="0" y1="128" x2="1280" y2="128"/>
+    <line x1="0" y1="192" x2="1280" y2="192"/>
+    <line x1="0" y1="256" x2="1280" y2="256"/>
+    <line x1="160" y1="0" x2="160" y2="320"/>
+    <line x1="320" y1="0" x2="320" y2="320"/>
+    <line x1="480" y1="0" x2="480" y2="320"/>
+    <line x1="640" y1="0" x2="640" y2="320"/>
+    <line x1="800" y1="0" x2="800" y2="320"/>
+    <line x1="960" y1="0" x2="960" y2="320"/>
+    <line x1="1120" y1="0" x2="1120" y2="320"/>
+  </g>
+
+  <!-- Signal wire -->
+  <line x1="640" y1="72" x2="640" y2="248" stroke="url(#wire)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="640" cy="72" r="5" fill="#0A84FF" filter="url(#glow)"/>
+  <circle cx="640" cy="248" r="5" fill="#0A84FF" filter="url(#glow)"/>
+
+  <!-- Logo icon -->
+  <g transform="translate(556, 100)">
+    <rect x="0" y="0" width="52" height="52" rx="14" fill="#0E0E10" stroke="#0A84FF" stroke-opacity="0.5" stroke-width="1.5"/>
+    <line x1="26" y1="10" x2="26" y2="42" stroke="#2C2C2E" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="26" y1="19" x2="26" y2="33" stroke="#0A84FF" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="26" cy="10" r="4" fill="#0A84FF"/>
+    <circle cx="26" cy="42" r="4" fill="#0A84FF"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="628" y="143" font-family="'SF Pro Display', 'Inter', -apple-system, sans-serif" font-size="52" font-weight="800" letter-spacing="-1" fill="#ffffff">Conduit</text>
+
+  <!-- Tagline -->
+  <text x="640" y="182" text-anchor="middle" font-family="'SF Mono', 'JetBrains Mono', 'Fira Code', monospace" font-size="15" fill="#8E8E93" letter-spacing="0.5">Turn any LLM chat UI into a programmable HTTP API</text>
+
+  <!-- Provider pills -->
+  <g transform="translate(439, 210)">
+    <!-- ChatGPT -->
+    <rect x="0" y="0" width="100" height="28" rx="14" fill="#0A84FF" fill-opacity="0.1" stroke="#0A84FF" stroke-opacity="0.3" stroke-width="1"/>
+    <text x="50" y="19" text-anchor="middle" font-family="'SF Mono', monospace" font-size="11" font-weight="600" fill="#0A84FF" letter-spacing="0.5">ChatGPT</text>
+    <!-- Claude -->
+    <rect x="112" y="0" width="80" height="28" rx="14" fill="#0A84FF" fill-opacity="0.1" stroke="#0A84FF" stroke-opacity="0.3" stroke-width="1"/>
+    <text x="152" y="19" text-anchor="middle" font-family="'SF Mono', monospace" font-size="11" font-weight="600" fill="#0A84FF" letter-spacing="0.5">Claude</text>
+    <!-- Gemini -->
+    <rect x="204" y="0" width="86" height="28" rx="14" fill="#0A84FF" fill-opacity="0.1" stroke="#0A84FF" stroke-opacity="0.3" stroke-width="1"/>
+    <text x="247" y="19" text-anchor="middle" font-family="'SF Mono', monospace" font-size="11" font-weight="600" fill="#0A84FF" letter-spacing="0.5">Gemini</text>
+    <!-- more -->
+    <rect x="302" y="0" width="100" height="28" rx="14" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+    <text x="352" y="19" text-anchor="middle" font-family="'SF Mono', monospace" font-size="11" fill="#48484A" letter-spacing="0.5">+ any LLM</text>
+  </g>
+
+  <!-- Bottom border glow -->
+  <rect x="0" y="315" width="1280" height="5" fill="#0A84FF" fill-opacity="0.15"/>
+</svg>
