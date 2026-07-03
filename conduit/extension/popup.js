@@ -11,7 +11,7 @@ const KNOWN = [
 const ENDPOINT = "http://localhost:8765/v1/chat";
 
 const curlFor = (provider) =>
-  `curl -X POST ${ENDPOINT} \\\n  -H "Content-Type: application/json" \\\n  -d '{"provider":"${provider}","prompt":"Hello!"}'`;
+  `curl -X POST http://localhost:8765/v1/chat \\\n  -H "Content-Type: application/json" \\\n  -d '{"provider":"${provider}","prompt":"Hi!"}'`;
 
 function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -83,15 +83,6 @@ function copyText(str) {
   return navigator.clipboard.writeText(str);
 }
 
-// Drawer: update hint text on open/close.
-const drawer = document.getElementById("drawer");
-const drawerHint = document.getElementById("drawerHint");
-if (drawer && drawerHint) {
-  drawer.addEventListener("toggle", () => {
-    drawerHint.textContent = drawer.open ? "collapse" : "expand";
-  });
-}
-
 // Endpoint chip: copy the bare URL, flash the hint to "copied".
 const endpointEl = document.getElementById("endpoint");
 const epHint = document.getElementById("epHint");
@@ -112,6 +103,14 @@ function copyCurl() {
 }
 curlBlock.addEventListener("click", copyCurl);
 curlBlock.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyCurl(); } });
+
+// Expand / collapse the endpoint + curl details so the popup stays compact by default.
+const moreEl = document.getElementById("more");
+const moreToggle = document.getElementById("moreToggle");
+moreToggle.addEventListener("click", () => {
+  const open = moreEl.classList.toggle("open");
+  moreToggle.setAttribute("aria-expanded", open ? "true" : "false");
+});
 
 function fetchStatus() {
   // Inside the extension: ask the background worker. Outside it (preview/dev): demo state.

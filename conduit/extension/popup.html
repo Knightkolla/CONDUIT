@@ -56,7 +56,7 @@
       width: 340px;
       font-size: 13px;
       color: var(--text);
-      border-radius: 22px;
+      border-radius: 26px;
       overflow: hidden;
       background: radial-gradient(120% 66% at 50% -4%, rgba(42, 42, 46, 0.62), rgba(6, 6, 7, 0.9));
       backdrop-filter: blur(26px) saturate(140%);
@@ -114,20 +114,25 @@
 
     @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
 
-    /* ---------- reactor core ---------- */
-    .core {
+    /* ---------- reactor core (rounded chamber) ---------- */
+    .chamber {
       position: relative;
-      height: 138px;
+      height: 124px;
       display: grid; place-items: center;
-      margin: 2px 0 2px;
+      margin: 5px 16px 2px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: radial-gradient(120% 90% at 50% 32%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+      border: 1px solid var(--line-soft);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     .ring {
       position: absolute; border-radius: 50%;
       transition: opacity 0.3s;
     }
-    .ring.r1 { width: 112px; height: 112px; border: 1px dashed rgba(255, 255, 255, 0.3); animation: spinCW 14s linear infinite; }
-    .ring.r2 { width: 146px; height: 146px; border: 1px solid rgba(255, 255, 255, 0.11); animation: spinCCW 22s linear infinite; }
-    .ring.glow { width: 146px; height: 146px; box-shadow: 0 0 44px -8px rgba(255, 255, 255, 0.22); border: 0; }
+    .ring.r1 { width: 96px; height: 96px; border: 1px dashed rgba(255, 255, 255, 0.3); animation: spinCW 14s linear infinite; }
+    .ring.r2 { width: 120px; height: 120px; border: 1px solid rgba(255, 255, 255, 0.11); animation: spinCCW 22s linear infinite; }
+    .ring.glow { width: 120px; height: 120px; box-shadow: 0 0 40px -8px rgba(255, 255, 255, 0.22); border: 0; }
     .orb {
       width: 54px; height: 54px; border-radius: 50%;
       background: radial-gradient(circle at 38% 32%, #FFFFFF, #CBCDD2 52%, #6E7178);
@@ -142,10 +147,12 @@
     @keyframes spinCW { to { transform: rotate(360deg) } }
     @keyframes spinCCW { to { transform: rotate(-360deg) } }
 
+    /* idle: core alive but quiet */
     [data-state="idle"] .orb { filter: brightness(0.62) saturate(0.85); animation-duration: 4.6s; }
     [data-state="idle"] .ring.r1 { opacity: 0.55; }
     [data-state="idle"] .ring.glow { box-shadow: 0 0 34px -12px rgba(255, 255, 255, 0.16); }
 
+    /* offline: core cold, inert */
     [data-state="offline"] .orb {
       background: radial-gradient(circle at 38% 32%, #808289, #3a3b40 58%, #1b1c1f);
       animation: none;
@@ -205,66 +212,20 @@
       0% { left: -6px; opacity: 0 } 15% { opacity: 1 } 85% { opacity: 1 } 100% { left: 100%; opacity: 0 }
     }
 
-    /* ---------- collapsible drawer ---------- */
-    .drawer {
-      margin: 12px 16px 0;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      background: rgba(255, 255, 255, 0.025);
-      overflow: hidden;
-    }
-
-    .drawer-toggle {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 12px;
-      cursor: pointer;
-      list-style: none;
-      user-select: none;
-      transition: background 0.15s;
-    }
-    .drawer-toggle::-webkit-details-marker { display: none; }
-    .drawer-toggle:hover { background: rgba(255, 255, 255, 0.04); }
-
-    .drawer-toggle .toggle-label {
-      font-family: var(--mono); font-size: 8.5px; font-weight: 600;
-      letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint);
-    }
-    .drawer-toggle .toggle-right {
-      display: flex; align-items: center; gap: 7px;
-    }
-    .drawer-toggle .toggle-hint {
-      font-family: var(--mono); font-size: 8px; color: var(--dim);
-      letter-spacing: 0.05em;
-    }
-    .chevron {
-      width: 12px; height: 12px; color: var(--faint);
-      transition: transform 0.22s ease;
-      flex-shrink: 0;
-    }
-    .drawer[open] .chevron { transform: rotate(180deg); }
-
-    /* divider between toggle and content */
-    .drawer[open] .drawer-toggle {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    }
-
-    /* content inside the drawer */
-    .drawer-body { padding: 10px 0 4px; }
-
-    /* ---------- endpoint chip ---------- */
+    /* ---------- endpoint chip (copy endpoint) ---------- */
     .endpoint {
-      margin: 0 12px 10px;
+      margin: 11px 16px 0;
       display: flex; align-items: center; gap: 9px;
-      padding: 9px 11px; border-radius: 11px;
+      padding: 9px 11px; border-radius: 12px;
       background: rgba(255, 255, 255, 0.045);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       cursor: pointer;
       transition: border-color 0.18s, background-color 0.18s;
     }
-    .endpoint:hover { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); }
+    .endpoint:hover { border-color: rgba(255, 255, 255, 0.38); background: rgba(255, 255, 255, 0.08); }
     .endpoint .verb {
       font-family: var(--mono); font-size: 9px; font-weight: 700; color: var(--wire);
-      border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08);
       padding: 2px 5px; border-radius: 5px;
     }
     .endpoint .url {
@@ -282,24 +243,46 @@
     .endpoint.ok .copyhint { opacity: 1; transform: translateX(0); }
 
     /* ---------- quick start ---------- */
-    .quick { margin: 0 12px; }
+    .quick { margin: 11px 16px 0; }
     .quick .eyebrow {
       font-family: var(--mono); font-size: 8.5px; font-weight: 600;
       letter-spacing: 0.19em; text-transform: uppercase; color: var(--faint);
-      padding: 0 2px 6px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2px 7px; display: flex; align-items: center; justify-content: space-between;
     }
     .quick .eyebrow .hint { color: var(--dim); text-transform: none; letter-spacing: 0.04em; }
     .curl {
       position: relative; font-family: var(--mono);
       font-size: 9.5px; line-height: 1.55; color: var(--muted);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 10px; padding: 10px 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px; padding: 11px 12px;
       white-space: pre-wrap; word-break: break-all; cursor: pointer;
       transition: border-color 0.18s;
     }
-    .curl:hover { border-color: rgba(255, 255, 255, 0.2); }
+    .curl:hover { border-color: rgba(255, 255, 255, 0.22); }
     .curl .k { color: var(--wire); }
+
+    /* ---------- expandable details (endpoint + curl) ---------- */
+    .more { margin: 10px 16px 0; }
+    .more-toggle {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      padding: 9px 12px; border-radius: 11px; cursor: pointer;
+      transition: border-color 0.18s, background-color 0.18s, color 0.18s, border-radius 0.18s;
+    }
+    .more-toggle:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.06); }
+    .more-toggle .chev { font-size: 13px; line-height: 1; transition: transform 0.28s; }
+    .more.open .more-toggle { color: var(--text); border-color: rgba(255, 255, 255, 0.2); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .more.open .more-toggle .chev { transform: rotate(180deg); }
+    .more-body { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.32s ease, opacity 0.24s ease; }
+    .more.open .more-body { max-height: 300px; opacity: 1; }
+    .more-body .endpoint { margin: 9px 0 0; }
+    .more-body .quick { margin: 10px 0 0; }
 
     /* ---------- footer ---------- */
     .footer {
@@ -311,7 +294,6 @@
 
     @media (prefers-reduced-motion: reduce) {
       .orb, .ring, .flow, .pip { animation: none !important; }
-      .chevron { transition: none; }
     }
 
     /* preview-only switch */
@@ -343,7 +325,7 @@
       <span class="pill"><span class="pip"></span><span id="pillLabel">Live</span></span>
     </div>
 
-    <div class="core">
+    <div class="chamber">
       <span class="ring glow"></span>
       <span class="ring r2"></span>
       <span class="ring r1"></span>
@@ -354,32 +336,24 @@
 
     <div class="rail" id="rail"></div>
 
-    <!-- collapsible drawer for endpoint + quick start -->
-    <details class="drawer" id="drawer">
-      <summary class="drawer-toggle">
-        <span class="toggle-label">Endpoint &amp; Quick Start</span>
-        <span class="toggle-right">
-          <span class="toggle-hint" id="drawerHint">expand</span>
-          <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="2,4 6,8 10,4"/>
-          </svg>
-        </span>
-      </summary>
-
-      <div class="drawer-body">
+    <div class="more" id="more">
+      <button class="more-toggle" id="moreToggle" type="button" aria-expanded="false">
+        <span>Endpoint &amp; curl</span>
+        <span class="chev">⌄</span>
+      </button>
+      <div class="more-body">
         <div class="endpoint" id="endpoint" title="Copy endpoint">
           <span class="verb">POST</span>
           <span class="url">localhost:8765/v1/chat</span>
           <span class="copyhint" id="epHint">copy</span>
           <span class="ic">⎘</span>
         </div>
-
         <div class="quick">
           <div class="eyebrow"><span>Quick start</span><span class="hint">click to copy</span></div>
           <div class="curl" id="curlBlock" role="button" tabindex="0" title="Click to copy"></div>
         </div>
       </div>
-    </details>
+    </div>
 
     <div class="footer">Conduit <span class="sep">/</span> LLM UI to API bridge</div>
   </div>
