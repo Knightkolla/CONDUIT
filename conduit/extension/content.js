@@ -665,24 +665,22 @@ function fetchImageViaBackground(url) {
 /**
  * Fetch any image URL and return a base64 data URL.
  *
- * blob: → fetch in content script (tab-scoped, SW cannot access them)
- * data: → already encoded, return as-is
- * https: → route through background SW to bypass CORS
+ * blob: → delegate to injector.js (MAIN world) via CustomEvent bridge.
+ *          Blob URLs are owned by the page's MAIN world JS context;
+ *          the isolated-world content script cannot fetch them at all.
+ * data: → already encoded, return as-is.
+ * https: → route through background SW to bypass CORS.
  */
 async function fetchImageAsDataUrl(url) {
   if (url.startsWith("data:")) return url;
 
   if (url.startsWith("blob:")) {
-    // Blob URLs are tied to the tab's origin — only the content script can fetch them
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Blob fetch failed: HTTP ${resp.status}`);
-    const blob = await resp.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    console.log(`[Conduit] Fetching blob via MAIN world: ${url.slice(0, 70)}`);
+    const result = await mainWorldCall(
+      "conduit:fetchBlob", "conduit:fetchBlob:result", { url }, 30_000
+    );
+    if (!result.ok) throw new Error(result.error || "MAIN world blob fetch failed");
+    return result.dataUrl;
   }
 
   return fetchImageViaBackground(url);

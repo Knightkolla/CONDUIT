@@ -213,3 +213,33 @@ document.addEventListener("conduit:submit", (ev) => {
   if (!ok) console.error("[Conduit injector] All submit attempts failed");
   document.dispatchEvent(new CustomEvent("conduit:submit:result", { detail: { requestId, ok, method, html } }));
 });
+
+// ─────────────────────────── Blob fetch ───────────────────────────
+// Blob URLs created by the page's JS are scoped to the MAIN world.
+// The isolated-world content script cannot fetch them — so we handle
+// them here and return a base64 data URL via CustomEvent.
+
+document.addEventListener("conduit:fetchBlob", async (ev) => {
+  const { requestId, url } = ev.detail;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
+        detail: { requestId, ok: true, dataUrl: reader.result }
+      }));
+    };
+    reader.onerror = () => {
+      document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
+        detail: { requestId, ok: false, error: "FileReader error" }
+      }));
+    };
+    reader.readAsDataURL(blob);
+  } catch (e) {
+    document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
+      detail: { requestId, ok: false, error: e.message }
+    }));
+  }
+});
