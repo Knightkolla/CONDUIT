@@ -3,9 +3,11 @@ Conduit backend — FastAPI + WebSocket bridge between HTTP callers and the Chro
 """
 
 import asyncio
+import base64
 import json
 import logging
 import os
+import pathlib
 import uuid
 from contextlib import asynccontextmanager
 from typing import Dict
@@ -14,6 +16,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from calibration import calibrate_selectors
@@ -53,6 +56,10 @@ provider_status: Dict[str, bool] = {}
 # request_id -> asyncio.Future
 pending_requests: Dict[str, asyncio.Future] = {}
 
+# Images saved to disk so they survive backend reloads
+IMAGE_DIR = pathlib.Path("/tmp/conduit_images")
+IMAGE_DIR.mkdir(exist_ok=True)
+
 # ────────────────────────────── Models ──────────────────────────────
 
 class ChatRequest(BaseModel):
@@ -66,7 +73,8 @@ class ChatResponse(BaseModel):
     id: str
     provider: str
     response: str
-    images: list[str] = []
+    images: list[str] = []       # base64 data URLs (legacy)
+    image_urls: list[str] = []   # short localhost URLs — easier to use
     status: str
 
 
@@ -81,6 +89,15 @@ class DeriveSelectorRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"name": "Conduit", "version": "1.0.0", "docs": "/docs"}
+
+
+@app.get("/v1/images/{image_id}")
+async def get_image(image_id: str):
+    for path in IMAGE_DIR.glob(f"{image_id}.*"):
+        ext = path.suffix.lstrip(".")
+        ct = f"image/{ext}" if ext else "image/jpeg"
+        return Response(content=path.read_bytes(), media_type=ct)
+    raise HTTPException(404, "Image not found")
 
 
 @app.get("/v1/providers")
@@ -123,11 +140,25 @@ async def chat(req: ChatRequest):
 
     try:
         result = await asyncio.wait_for(future, timeout=req.timeout)
+        raw_images = result.get("images", [])
+        image_urls = []
+        for data_url in raw_images:
+            if "," in data_url:
+                header, b64 = data_url.split(",", 1)
+                ct = header.split(";")[0].replace("data:", "") or "image/jpeg"
+                img_bytes = base64.b64decode(b64)
+            else:
+                img_bytes, ct = base64.b64decode(data_url), "image/jpeg"
+            ext = ct.split("/")[-1]
+            img_id = uuid.uuid4().hex[:8]
+            (IMAGE_DIR / f"{img_id}.{ext}").write_bytes(img_bytes)
+            image_urls.append(f"http://localhost:8765/v1/images/{img_id}")
         return ChatResponse(
             id=request_id,
             provider=req.provider,
             response=result["text"],
-            images=result.get("images", []),
+            images=raw_images,
+            image_urls=image_urls,
             status="success",
         )
     except asyncio.TimeoutError:
