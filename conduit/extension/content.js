@@ -414,8 +414,8 @@ function sleep(ms) {
 async function waitForDone(msgsBefore = 0, timeoutMs = 120_000) {
   const started = Date.now();
 
-  // ── Phase 1: wait for generation to START (up to 15 s) ──
-  const phase1End = started + 15_000;
+  // ── Phase 1: wait for generation to START (up to 5 s) ──
+  const phase1End = started + 5_000;
   let generationStarted = false;
   while (!generationStarted && Date.now() < phase1End) {
     await sleep(200);
@@ -440,7 +440,7 @@ async function waitForDone(msgsBefore = 0, timeoutMs = 120_000) {
       clearTimeout(safetyTimer);
 
       // Short grace period for the last tokens to render
-      await sleep(800);
+      await sleep(300);
       let captured = captureResponse(msgsBefore);
       if (!captured) {
         console.warn("[Conduit] captureResponse empty, retrying in 1.5 s…");
@@ -461,10 +461,10 @@ async function waitForDone(msgsBefore = 0, timeoutMs = 120_000) {
 
     function resetIdleTimer() {
       if (idleTimer) clearTimeout(idleTimer);
-      // If DOM goes idle for 2 s and generation is done, capture
+      // If DOM goes idle for 1 s and generation is done, capture
       idleTimer = setTimeout(() => {
         if (!settled && !generationIsActive()) finish("idle_timeout");
-      }, 2000);
+      }, 1000);
     }
 
     const observer = new MutationObserver(() => {
@@ -613,6 +613,21 @@ function text(el) {
 let inFlight = false;
 const promptQueue = [];
 
+const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+let keepAliveAudio = null;
+
+function startKeepAlive() {
+  if (!keepAliveAudio) {
+    keepAliveAudio = new Audio(SILENT_WAV);
+    keepAliveAudio.loop = true;
+  }
+  keepAliveAudio.play().catch(e => console.warn("[Conduit] Audio keep-alive failed (needs page interaction):", e));
+}
+
+function stopKeepAlive() {
+  if (keepAliveAudio) keepAliveAudio.pause();
+}
+
 function enqueue(item) {
   promptQueue.push(item);
   drain();
@@ -735,7 +750,7 @@ function findImageCandidates(imgSrcsBefore) {
 }
 
 async function captureImages(imgSrcsBefore, pollForLateImages = false) {
-  await sleep(600);
+  await sleep(200);
 
   let candidates = findImageCandidates(imgSrcsBefore);
 
@@ -774,7 +789,9 @@ function drain() {
   inFlight = true;
   const { id, text: promptText, web_search, timeout } = promptQueue.shift();
 
+  startKeepAlive();
   handlePrompt(id, promptText, web_search, timeout).finally(() => {
+    stopKeepAlive();
     inFlight = false;
     drain();
   });
@@ -800,7 +817,8 @@ async function handlePrompt(id, promptText, web_search, timeout) {
     const responseText = await waitForDone(msgsBefore, timeoutMs);
     // Short response (<= 200 chars) likely means image generation — poll for
     // the image that renders after the text phase (Gemini two-phase generation)
-    const pollForLateImages = responseText.length <= 500;
+    // ONLY if the prompt actually asks for an image.
+    const pollForLateImages = responseText.length <= 500 && /image|draw|picture|photo/i.test(promptText);
     const images = await captureImages(imgSrcsBefore, pollForLateImages);
 
     if (!responseText && images.length === 0) {
