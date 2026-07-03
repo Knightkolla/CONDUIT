@@ -646,13 +646,29 @@ function fetchImageViaBackground(url) {
 
 async function captureImages(msgsBefore) {
   let container = null;
+
+  // ChatGPT: new assistant messages after the snapshot
   const msgs = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
   const newMsgs = msgs.slice(msgsBefore);
-  if (newMsgs.length) {
-    container = newMsgs[newMsgs.length - 1];
-  } else {
+  if (newMsgs.length) container = newMsgs[newMsgs.length - 1];
+
+  // ChatGPT fallback: .markdown prose div
+  if (!container) {
     const markdown = document.querySelectorAll(".markdown");
     if (markdown.length) container = markdown[markdown.length - 1];
+  }
+
+  // Gemini: model-response web component (last = most recent reply)
+  // Also covers img-gen-response which Gemini uses for Imagen output
+  if (!container) {
+    const gemini = document.querySelectorAll("model-response, img-gen-response, .response-content");
+    if (gemini.length) container = gemini[gemini.length - 1];
+  }
+
+  // Claude: .font-claude-message
+  if (!container) {
+    const claude = document.querySelectorAll(".font-claude-message");
+    if (claude.length) container = claude[claude.length - 1];
   }
 
   if (!container) return [];

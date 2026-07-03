@@ -18,6 +18,9 @@
     "https://claude.ai/*",
     "https://gemini.google.com/*",
     "https://files.oaiusercontent.com/*",
+    "https://*.google.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.googleusercontent.com/*",
     "http://localhost:8765/*"
   ],
 
