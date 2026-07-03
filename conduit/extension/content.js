@@ -693,7 +693,8 @@ async function fetchImageAsDataUrl(url) {
 function snapshotImageSrcs() {
   const srcs = new Set();
   querySelectorAllDeep(document.body, "img").forEach((img) => {
-    if (img.src) srcs.add(img.src);
+    const url = img.currentSrc || img.src;
+    if (url && url !== window.location.href) srcs.add(url);
   });
   return srcs;
 }
@@ -705,29 +706,27 @@ function snapshotImageSrcs() {
  */
 function findImageCandidates(imgSrcsBefore) {
   const allImgs = querySelectorAllDeep(document.body, "img");
-  console.log(`[Conduit] findImageCandidates: ${allImgs.length} imgs on page, ${imgSrcsBefore.size} existed before`);
 
   return allImgs.filter((img) => {
-    const src = img.src;
-    if (!src) return false;
+    // Use currentSrc (resolves srcset/lazy) over src; both may be blob: URLs
+    const src = img.currentSrc || img.src;
+    if (!src || src === window.location.href) return false;
+
+    // Attach the resolved src so callers can use img._resolvedSrc
+    img._resolvedSrc = src;
 
     // Skip anything that was already on the page before we sent the prompt
     if (imgSrcsBefore.has(src)) return false;
 
     // Skip avatars — check the img element itself, not ancestors
-    // (img.closest('[class*="avatar"]') was too broad: Gemini puts generated
-    //  images inside containers that happen to have "avatar" in ancestor classes)
     const isAvatar = img.classList.contains("avatar") ||
                      /avatar|profile|user/i.test(img.alt || "") ||
                      /avatar|profile|user/i.test(img.className || "");
-    if (isAvatar) { console.log(`[Conduit]   skip avatar: ${src.slice(0, 60)}`); return false; }
+    if (isAvatar) return false;
 
     // Accept if size unknown (not loaded yet) or >= 120 px
-    const sizeOk = (img.naturalWidth === 0 || img.naturalWidth >= 120) &&
-                   (img.width === 0 || img.width >= 120);
-
-    console.log(`[Conduit]   ${sizeOk ? "KEEP" : "skip(small)"}: ${src.slice(0, 80)} nw=${img.naturalWidth} w=${img.width}`);
-    return sizeOk;
+    return (img.naturalWidth === 0 || img.naturalWidth >= 120) &&
+           (img.width === 0 || img.width >= 120);
   });
 }
 
@@ -753,13 +752,14 @@ async function captureImages(imgSrcsBefore, pollForLateImages = false) {
 
   const base64Images = [];
   for (const img of candidates) {
+    const url = img._resolvedSrc || img.currentSrc || img.src;
     try {
-      console.log(`[Conduit] Fetching: ${img.src.slice(0, 80)}`);
-      const dataUrl = await fetchImageAsDataUrl(img.src);
+      console.log(`[Conduit] Fetching: ${url.slice(0, 80)}`);
+      const dataUrl = await fetchImageAsDataUrl(url);
       base64Images.push(dataUrl);
       console.log(`[Conduit] Encoded. Size: ${dataUrl.length} chars`);
     } catch (e) {
-      console.warn(`[Conduit] Failed: ${img.src.slice(0, 80)} — ${e.message}`);
+      console.warn(`[Conduit] Failed: ${url.slice(0, 80)} — ${e.message}`);
     }
   }
   return base64Images;

@@ -219,27 +219,33 @@ document.addEventListener("conduit:submit", (ev) => {
 // The isolated-world content script cannot fetch them — so we handle
 // them here and return a base64 data URL via CustomEvent.
 
-document.addEventListener("conduit:fetchBlob", async (ev) => {
+document.addEventListener("conduit:fetchBlob", (ev) => {
   const { requestId, url } = ev.detail;
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const blob = await resp.blob();
-    const reader = new FileReader();
-    reader.onloadend = () => {
+
+  // fetch() is blocked by Gemini's CSP (connect-src has no blob:).
+  // img-src does allow blob: (the page itself renders these images),
+  // so we draw into a canvas and export as a data URL instead.
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
-        detail: { requestId, ok: true, dataUrl: reader.result }
+        detail: { requestId, ok: true, dataUrl }
       }));
-    };
-    reader.onerror = () => {
+    } catch (e) {
       document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
-        detail: { requestId, ok: false, error: "FileReader error" }
+        detail: { requestId, ok: false, error: `Canvas export failed: ${e.message}` }
       }));
-    };
-    reader.readAsDataURL(blob);
-  } catch (e) {
+    }
+  };
+  img.onerror = () => {
     document.dispatchEvent(new CustomEvent("conduit:fetchBlob:result", {
-      detail: { requestId, ok: false, error: e.message }
+      detail: { requestId, ok: false, error: `Image failed to load: ${url.slice(0, 60)}` }
     }));
-  }
+  };
+  img.src = url;
 });
