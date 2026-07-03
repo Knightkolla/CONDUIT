@@ -543,15 +543,14 @@ function captureResponse(msgsBefore = 0) {
       const all = Array.from(document.querySelectorAll('.markdown'));
       if (all.length > msgsBefore) return text(all[all.length - 1]);
     },
-    // ChatGPT: conversation turn containing an assistant role
+    // ChatGPT: conversation turn containing an assistant role (only new turns)
     () => {
-      const turns = document.querySelectorAll('[data-testid^="conversation-turn"]');
-      for (let i = turns.length - 1; i >= 0; i--) {
-        const turn = turns[i];
-        if (!turn.querySelector('[data-message-author-role="assistant"]')) continue;
-        const prose = turn.querySelector('.markdown, [class*="prose"]');
-        return text(prose || turn);
-      }
+      const turns = Array.from(document.querySelectorAll('[data-testid^="conversation-turn"]'));
+      const assistantTurns = turns.filter(t => t.querySelector('[data-message-author-role="assistant"]'));
+      if (assistantTurns.length <= msgsBefore) return;
+      const turn = assistantTurns[assistantTurns.length - 1];
+      const prose = turn.querySelector('.markdown, [class*="prose"]');
+      return text(prose || turn);
     },
     // Claude: .font-claude-message
     () => {
@@ -573,15 +572,13 @@ function captureResponse(msgsBefore = 0) {
       const msgs = document.querySelectorAll('.response-container, [class*="response-container"]');
       if (msgs.length) return text(msgs[msgs.length - 1]);
     },
-    // Generic: role=article, skip user turns
+    // Generic: role=article, skip user turns (only new assistant articles)
     () => {
-      const articles = document.querySelectorAll('[role="article"]');
-      for (let i = articles.length - 1; i >= 0; i--) {
-        const a = articles[i];
-        if (a.querySelector('[data-message-author-role="user"]')) continue;
-        const t = text(a);
-        if (t.length > 10) return t;
-      }
+      const articles = Array.from(document.querySelectorAll('[role="article"]'));
+      const assistantArticles = articles.filter(a => !a.querySelector('[data-message-author-role="user"]'));
+      if (assistantArticles.length <= msgsBefore) return;
+      const t = text(assistantArticles[assistantArticles.length - 1]);
+      if (t.length > 10) return t;
     },
   ];
 
@@ -796,7 +793,7 @@ async function handlePrompt(id, promptText, web_search, timeout) {
     const responseText = await waitForDone(msgsBefore, timeoutMs);
     // Short response (<= 200 chars) likely means image generation — poll for
     // the image that renders after the text phase (Gemini two-phase generation)
-    const pollForLateImages = responseText.length <= 200;
+    const pollForLateImages = responseText.length <= 500;
     const images = await captureImages(imgSrcsBefore, pollForLateImages);
 
     if (!responseText && images.length === 0) {
