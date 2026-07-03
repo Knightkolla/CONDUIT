@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "LLM-to-API Bridge",
+  "version": "1.0.0",
+  "description": "Turn any web-based LLM chat UI into a programmatic HTTP API",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "scripting", "activeTab", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LLM-to-API Bridge"
+  },
+  "icons": {}
+}
