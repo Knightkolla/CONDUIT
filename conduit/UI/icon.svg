@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><defs>
+  <radialGradient id="bg" cx="50%" cy="26%" r="92%"><stop offset="0" stop-color="#313135"></stop><stop offset="1" stop-color="#060607"></stop></radialGradient>
+  <radialGradient id="orb" cx="38%" cy="30%" r="76%"><stop offset="0" stop-color="#ffffff"></stop><stop offset=".6" stop-color="#f4f5f7"></stop><stop offset="1" stop-color="#b4b7be"></stop></radialGradient>
+  <radialGradient id="halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffffff" stop-opacity="1"></stop><stop offset=".38" stop-color="#ffffff" stop-opacity=".5"></stop><stop offset=".7" stop-color="#ffffff" stop-opacity=".14"></stop><stop offset="1" stop-color="#ffffff" stop-opacity="0"></stop></radialGradient></defs>
+  <rect x="1.5" y="1.5" width="125" height="125" rx="34" fill="url(#bg)" stroke="rgba(255,255,255,.18)" stroke-width="1.2"></rect>
+  <circle cx="64" cy="64" r="44" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1.4"></circle>
+  <circle cx="64" cy="64" r="33" fill="none" stroke="rgba(255,255,255,.36)" stroke-width="1.7" stroke-dasharray="2.5 6"></circle>
+  <circle cx="64" cy="64" r="37" fill="url(#halo)"></circle>
+  <circle cx="64" cy="64" r="17" fill="url(#orb)"></circle>
+  <circle cx="57.5" cy="57.5" r="5.6" fill="#ffffff"></circle></svg>
