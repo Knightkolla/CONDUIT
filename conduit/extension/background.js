@@ -81,7 +81,7 @@ function wsSend(obj) {
 // ─────────────────────────── Prompt routing ───────────────────────────
 
 function routePromptToTab(msg) {
-  const { id, provider, text } = msg;
+  const { id, provider, text, web_search, timeout } = msg;
   const tabId = providerToTab[provider];
 
   if (!tabId) {
@@ -89,7 +89,7 @@ function routePromptToTab(msg) {
     return;
   }
 
-  chrome.tabs.sendMessage(tabId, { type: "prompt", id, text }, (response) => {
+  chrome.tabs.sendMessage(tabId, { type: "prompt", id, text, web_search, timeout }, (response) => {
     if (chrome.runtime.lastError) {
       const reason = chrome.runtime.lastError.message || "content script unreachable";
       console.error("[Conduit bg] sendMessage error:", reason);

@@ -17,6 +17,7 @@
     "https://chatgpt.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
+    "https://files.oaiusercontent.com/*",
     "http://localhost:8765/*"
   ],
 

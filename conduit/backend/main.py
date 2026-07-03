@@ -56,12 +56,14 @@ class ChatRequest(BaseModel):
     provider: str
     prompt: str
     timeout: int = 120
+    web_search: bool = False
 
 
 class ChatResponse(BaseModel):
     id: str
     provider: str
     response: str
+    images: list[str] = []
     status: str
 
 
@@ -109,6 +111,8 @@ async def chat(req: ChatRequest):
             "id": request_id,
             "provider": req.provider,
             "text": req.prompt,
+            "web_search": req.web_search,
+            "timeout": req.timeout,
         })
     except Exception as exc:
         pending_requests.pop(request_id, None)
@@ -120,6 +124,7 @@ async def chat(req: ChatRequest):
             id=request_id,
             provider=req.provider,
             response=result["text"],
+            images=result.get("images", []),
             status="success",
         )
     except asyncio.TimeoutError:
@@ -233,10 +238,11 @@ async def ws_endpoint(websocket: WebSocket):
             elif msg_type == "response":
                 req_id = msg.get("id")
                 text = msg.get("text", "")
+                images = msg.get("images", [])
                 fut = pending_requests.pop(req_id, None)
                 if fut and not fut.done():
-                    fut.set_result({"text": text})
-                log.info(f"Response received for {req_id} ({len(text)} chars)")
+                    fut.set_result({"text": text, "images": images})
+                log.info(f"Response received for {req_id} ({len(text)} chars, {len(images)} images)")
 
             elif msg_type == "error":
                 req_id = msg.get("id")

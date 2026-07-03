@@ -25,6 +25,7 @@ const ADAPTERS = {
       submit: '[data-testid="send-button"]',
       responseContainer: null, // discovered dynamically
       doneSignal: '[data-testid="send-button"]:not([disabled])',
+      webSearch: 'button[aria-label*="Search"], button[aria-label="Search the web"], button[data-testid*="search"]',
     },
     injectStrategy: "textarea",
   },
@@ -90,6 +91,11 @@ const ANCHOR_CANDIDATES = {
     'button[aria-label="Send Message"]:not([disabled])',
     'button[aria-label="Send message"]:not([disabled])',
     'button[aria-label*="Send"]:not([disabled])',
+  ],
+  webSearch: [
+    'button[aria-label*="Search"]',
+    'button[aria-label="Search the web"]',
+    'button[data-testid*="search"]',
   ],
 };
 
@@ -485,36 +491,108 @@ function enqueue(item) {
   drain();
 }
 
+async function toggleWebSearch(adapter, enable) {
+  const found = await discoverSelector(adapter, "webSearch");
+  if (!found) {
+    console.warn("[Conduit] Web search button selector not found.");
+    return;
+  }
+  const btn = found.element;
+  const isPressed = btn.getAttribute("aria-pressed") === "true" ||
+                    btn.classList.contains("active") ||
+                    btn.getAttribute("aria-checked") === "true";
+  
+  if (enable !== isPressed) {
+    console.log(`[Conduit] Toggling web search to: ${enable}`);
+    btn.click();
+    await sleep(600); // Give react state time to propagate/render
+  } else {
+    console.log(`[Conduit] Web search already in desired state: ${isPressed}`);
+  }
+}
+
+async function captureImages(msgsBefore) {
+  let container = null;
+  const msgs = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+  const newMsgs = msgs.slice(msgsBefore);
+  if (newMsgs.length) {
+    container = newMsgs[newMsgs.length - 1];
+  } else {
+    const markdown = document.querySelectorAll(".markdown");
+    if (markdown.length) container = markdown[markdown.length - 1];
+  }
+
+  if (!container) return [];
+
+  const imgElements = Array.from(container.querySelectorAll("img"));
+  const base64Images = [];
+
+  for (const img of imgElements) {
+    const src = img.src;
+    const isAvatar = img.closest('[class*="avatar"]') || 
+                     img.classList.contains("avatar") || 
+                     /avatar|profile|user/i.test(img.alt || "") || 
+                     /avatar|profile|user/i.test(img.className || "");
+                     
+    if (!src || isAvatar || (img.naturalWidth > 0 && img.naturalWidth < 120) || (img.width > 0 && img.width < 120)) continue;
+
+    try {
+      console.log(`[Conduit] Fetching and encoding image: ${src}`);
+      const resp = await fetch(src);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      base64Images.push(dataUrl);
+      console.log(`[Conduit] Image encoded successfully. Size: ${dataUrl.length} chars`);
+    } catch (e) {
+      console.warn(`[Conduit] Failed to fetch image ${src}:`, e.message);
+    }
+  }
+  return base64Images;
+}
+
 function drain() {
   if (inFlight || promptQueue.length === 0) return;
   inFlight = true;
-  const { id, text: promptText } = promptQueue.shift();
+  const { id, text: promptText, web_search, timeout } = promptQueue.shift();
 
-  handlePrompt(id, promptText).finally(() => {
+  handlePrompt(id, promptText, web_search, timeout).finally(() => {
     inFlight = false;
     drain();
   });
 }
 
-async function handlePrompt(id, promptText) {
+async function handlePrompt(id, promptText, web_search, timeout) {
   try {
     // Snapshot existing assistant messages so we only capture the NEW reply
     const msgsBefore = document.querySelectorAll('[data-message-author-role="assistant"]').length;
     console.log(`[Conduit] msgsBefore=${msgsBefore}, starting inject`);
+
+    // Toggle web search if requested
+    await toggleWebSearch(adapter, !!web_search);
 
     await injectPrompt(adapter, promptText);
     await submitPrompt(adapter);
 
     chrome.runtime.sendMessage({ type: "injected", id });
 
-    const responseText = await waitForDone(msgsBefore);
+    // Use custom timeout if provided by the backend, else 120s
+    const timeoutMs = timeout ? timeout * 1000 : 120_000;
+    const responseText = await waitForDone(msgsBefore, timeoutMs);
 
     if (!responseText) {
       throw new Error("Response captured was empty — the page may not have generated a reply.");
     }
 
-    chrome.runtime.sendMessage({ type: "response", id, text: responseText });
-    console.log(`[Conduit] Request ${id} complete (${responseText.length} chars)`);
+    const images = await captureImages(msgsBefore);
+
+    chrome.runtime.sendMessage({ type: "response", id, text: responseText, images });
+    console.log(`[Conduit] Request ${id} complete (${responseText.length} chars, ${images.length} images)`);
   } catch (err) {
     console.error(`[Conduit] Request ${id} failed:`, err.message);
     chrome.runtime.sendMessage({ type: "error", id, reason: err.message });
@@ -554,7 +632,7 @@ if (!adapter) {
   // Listen for prompts from the background
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === "prompt") {
-      enqueue({ id: msg.id, text: msg.text });
+      enqueue({ id: msg.id, text: msg.text, web_search: msg.web_search, timeout: msg.timeout });
       sendResponse({ ok: true });
     }
     return true;
